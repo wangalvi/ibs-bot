@@ -1,0 +1,14 @@
+{
+  "symbol": "QQQ",
+  "capital_fraction": 0.98,
+  "max_capital": null,
+  "minutes_before_close": 15,
+  "ibs_buy": 0.2,
+  "ibs_sell": 0.8,
+  "macd_fast": 12,
+  "macd_slow": 26,
+  "macd_signal": 9,
+  "live": false,
+  "order_mode": "auto",
+  "fractional_minutes_before_close": 5
+}

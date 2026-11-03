@@ -1,0 +1,62 @@
+name: IBS MACD paper bot
+
+# GitHub schedules are in UTC and can start a few (sometimes 10-30) minutes late.
+# Four start times per weekday cover summer time, winter time and 1 pm half-days;
+# the bot exits right away (--max-wait 60) unless its decision time is within the next hour.
+on:
+  schedule:
+    - cron: "13 16,17,19,20 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      flags:
+        description: "Extra flags: leave empty for a normal run, or use --dry-run --now to test right away without trading"
+        required: false
+        default: "--dry-run --now"
+
+concurrency:
+  group: trading-bot          # never two runs at once
+  cancel-in-progress: false
+
+permissions:
+  contents: write             # lets the job commit the decision log back to the repo
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run the bot
+        env:
+          APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+          APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+        run: python live_bot.py --max-wait 60 ${{ github.event.inputs.flags }}
+
+      - name: Keep the logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 30
+
+      - name: Commit the decision log when something was decided
+        if: always()
+        run: |
+          git config user.name "trading-bot"
+          git config user.email "trading-bot@users.noreply.github.com"
+          if [ -n "$(git status --porcelain logs/decisions.csv)" ]; then
+            git add logs/
+            git commit -m "bot log $(date -u +%Y-%m-%d)"
+            git pull --rebase && git push
+          else
+            echo "No decision today in this run (early exit) - nothing to commit."
+          fi
