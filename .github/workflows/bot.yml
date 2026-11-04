@@ -1,11 +1,12 @@
 name: IBS MACD paper bot
 
-# GitHub schedules are in UTC and can start a few (sometimes 10-30) minutes late.
-# Four start times per weekday cover summer time, winter time and 1 pm half-days;
-# the bot exits right away (--max-wait 60) unless its decision time is within the next hour.
+# GitHub schedules are in UTC and often start 45-50 minutes late at busy times.
+# Starts every 30 minutes from 16:13 to 20:43 UTC; each run exits within seconds (--max-wait 60)
+# unless the decision time (3:55 pm ET, or 12:55 pm ET on half-days) is less than an hour away.
+# Runs never overlap (concurrency below); once one has traded, later runs are "too late" and skip.
 on:
   schedule:
-    - cron: "13 16,17,19,20 * * 1-5"
+    - cron: "13,43 16-20 * * 1-5"
   workflow_dispatch:
     inputs:
       flags:

@@ -119,7 +119,8 @@ def load_keys():
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
                 os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
-    key, secret = os.environ.get("APCA_API_KEY_ID"), os.environ.get("APCA_API_SECRET_KEY")
+    # strip(): a key pasted with a trailing newline/space (e.g. into a GitHub secret) breaks the HTTP header
+    key, secret = (os.environ.get("APCA_API_KEY_ID") or "").strip(), (os.environ.get("APCA_API_SECRET_KEY") or "").strip()
     if not key or not secret:
         sys.exit("No API keys found. Create alpaca_keys.env in this folder (see the instructions at the top of this file).")
     return key, secret
