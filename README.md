@@ -15,7 +15,7 @@ This bot trades QQQ on Alpaca once per trading day, near the close. It runs on G
 
 ## Test it
 
-Go to Actions, choose "IBS MACD paper bot", then "Run workflow". The default flags (`--dry-run --now`) make it decide immediately without placing an order.
+Go to Actions, choose "IBS MACD paper bot", then "Run workflow". Mode `test` (the default) decides immediately without placing an order; `trade` does a normal run.
 
 ## Stop it
 
