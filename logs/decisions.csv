@@ -1,2 +1,3 @@
 date,time_et,mode,dry_run,symbol,price,feed,order_mode,ibs,ibs_on,macd_on,invest,equity,qty_before,target_qty,action,order_id
 2026-11-04,15:38:52,paper,True,QQQ,692.595,iex,fractional,0.3457,True,False,True,100.92,0.142885472,0.142885472,hold,
+2026-11-04,15:40:32,paper,True,QQQ,691.92,iex,fractional,0.2956,True,False,True,100.85,0.142885472,0.142885472,hold,
