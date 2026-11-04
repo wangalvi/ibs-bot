@@ -1,0 +1,5 @@
+2026-11-04 20:38:52,609 INFO ==== QQQ bot (PAPER) DRY RUN ====
+2026-11-04 20:38:52,653 INFO order mode: fractional (decides 5 min before the close)
+2026-11-04 20:38:52,797 INFO history: 414 daily bars from sip feed, last 2026-11-04
+2026-11-04 20:38:52,885 INFO price 692.60 (iex), today's range 687.94-701.40, IBS 0.35 -> IBS signal ON; MACD -10.709 vs signal -6.767 -> off
+2026-11-04 20:38:52,885 INFO decision: INVESTED | holding 0.142885 sh, target 0.142885 sh -> HOLD 0
