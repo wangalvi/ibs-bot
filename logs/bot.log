@@ -33,3 +33,9 @@
 2026-11-09 20:55:01,017 INFO price 679.47 (iex), today's range 662.19-681.69, IBS 0.89 -> IBS signal off; MACD -16.213 vs signal -11.237 -> off
 2026-11-09 20:55:01,017 INFO decision: CASH | holding 0.142885 sh, target 0 sh -> SELL 0.142885 (about $97.09)
 2026-11-09 20:55:01,195 INFO submitted fractional market sell of 0.142885 QQQ: order 6781f6f5-0f37-4f99-ac65-3a21fd935a8f, status OrderStatus.PENDING_NEW
+2026-11-10 19:58:34,933 INFO ==== QQQ bot (PAPER) ====
+2026-11-10 19:58:34,981 INFO order mode: fractional (decides 5 min before the close)
+2026-11-10 19:58:34,981 INFO close is 16:00 ET; sleeping 56 min until 15:55 ET
+2026-11-10 20:55:00,119 INFO history: 414 daily bars from sip feed, last 2026-11-10
+2026-11-10 20:55:00,212 INFO price 675.32 (iex), today's range 667.11-680.87, IBS 0.60 -> IBS signal off; MACD -16.037 vs signal -12.198 -> off
+2026-11-10 20:55:00,212 INFO decision: CASH | holding 0 sh, target 0 sh -> HOLD 0
