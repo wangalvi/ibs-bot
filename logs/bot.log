@@ -39,3 +39,9 @@
 2026-11-10 20:55:00,119 INFO history: 414 daily bars from sip feed, last 2026-11-10
 2026-11-10 20:55:00,212 INFO price 675.32 (iex), today's range 667.11-680.87, IBS 0.60 -> IBS signal off; MACD -16.037 vs signal -12.198 -> off
 2026-11-10 20:55:00,212 INFO decision: CASH | holding 0 sh, target 0 sh -> HOLD 0
+2026-11-11 20:06:42,405 INFO ==== QQQ bot (PAPER) ====
+2026-11-11 20:06:42,725 INFO order mode: fractional (decides 5 min before the close)
+2026-11-11 20:06:42,726 INFO close is 16:00 ET; sleeping 48 min until 15:55 ET
+2026-11-11 20:55:00,472 INFO history: 414 daily bars from sip feed, last 2026-11-11
+2026-11-11 20:55:01,260 INFO price 689.96 (iex), today's range 683.60-695.57, IBS 0.53 -> IBS signal off; MACD -14.574 vs signal -12.681 -> off
+2026-11-11 20:55:01,261 INFO decision: CASH | holding 0 sh, target 0 sh -> HOLD 0
