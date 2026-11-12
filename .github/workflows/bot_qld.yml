@@ -1,0 +1,67 @@
+name: QLD bot (QQQ signals)
+
+# GitHub schedules are in UTC and often start 45-50 minutes late at busy times.
+# Starts every 30 minutes from 16:13 to 20:43 UTC; each run exits within seconds (--max-wait 60)
+# unless the decision time (3:55 pm ET, or 12:55 pm ET on half-days) is less than an hour away.
+# Runs never overlap (concurrency below); once one has traded, later runs are "too late" and skip.
+on:
+  schedule:
+    - cron: "13,43 16-20 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "test = decide right now without placing an order; trade = a normal run (waits for 3:55 pm ET, then trades)"
+        type: choice
+        options: [test, trade]
+        default: test
+
+concurrency:
+  group: trading-bot-qld      # never two QLD runs at once
+  cancel-in-progress: false
+
+permissions:
+  contents: write             # lets the job commit the decision log back to the repo
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run the bot
+        env:
+          # its own Alpaca paper account, so its money never mixes with the QQQ bot's
+          APCA_API_KEY_ID: ${{ secrets.QLD_APCA_API_KEY_ID }}
+          APCA_API_SECRET_KEY: ${{ secrets.QLD_APCA_API_SECRET_KEY }}
+        run: |
+          if [ -z "$APCA_API_KEY_ID" ]; then echo "Add the QLD_APCA_API_KEY_ID and QLD_APCA_API_SECRET_KEY secrets (keys of a second Alpaca paper account)."; exit 1; fi
+          python live_bot.py --config bot_config_qld.json --max-wait 60 ${{ github.event.inputs.mode == 'test' && '--dry-run --now' || '' }}
+
+      - name: Keep the logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-qld-${{ github.run_id }}
+          path: logs_qld/
+          retention-days: 30
+
+      - name: Commit the decision log when something was decided
+        if: always()
+        run: |
+          git config user.name "trading-bot"
+          git config user.email "trading-bot@users.noreply.github.com"
+          if [ -n "$(git status --porcelain logs_qld/decisions.csv)" ]; then
+            git add logs_qld/
+            git commit -m "QLD bot log $(date -u +%Y-%m-%d)"
+            git pull --rebase && git push
+          else
+            echo "No decision today in this run (early exit) - nothing to commit."
+          fi
