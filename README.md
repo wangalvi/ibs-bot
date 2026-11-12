@@ -23,3 +23,10 @@ You can stop it in either of two ways:
 
 - Actions → "IBS MACD paper bot" → the "..." menu → Disable workflow.
 - Commit an empty file named `STOP` to the repository.
+
+## Second bot: QLD (2x Nasdaq-100) using QQQ's signals
+
+- Settings: `bot_config_qld.json` (`symbol: QLD`, `signal_symbol: QQQ`, logs in `logs_qld/`).
+- Schedule: `.github/workflows/bot_qld.yml` (same times as the QQQ bot).
+- Keys: repository secrets `QLD_APCA_API_KEY_ID` and `QLD_APCA_API_SECRET_KEY`, from a second Alpaca paper account, so its money never mixes with the QQQ bot's.
+- Expect bigger swings: in backtests since 2008 it lost about 62% in late 2008 and about 42% in late 2018.

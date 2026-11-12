@@ -126,9 +126,9 @@ def load_keys():
     return key, secret
 
 
-def load_config():
+def load_config(name="bot_config.json"):
     cfg = dict(DEFAULTS); cfg["live"] = False
-    path = os.path.join(HERE, "bot_config.json")
+    path = name if os.path.isabs(name) else os.path.join(HERE, name)
     if os.path.exists(path):
         cfg.update(json.load(open(path, encoding="utf-8")))
     return cfg
@@ -252,8 +252,9 @@ def run_day(args, cfg):
     if os.path.exists(os.path.join(HERE, "STOP")):
         logging.warning("STOP file present - doing nothing."); return
     trading, data, paper = clients(cfg)
-    sym = cfg["symbol"]
-    logging.info(f"==== {sym} bot ({'PAPER' if paper else 'LIVE'}){' DRY RUN' if args.dry_run else ''} ====")
+    sym = cfg["symbol"]                              # what we buy and sell
+    sig_sym = cfg.get("signal_symbol") or sym        # whose daily candle drives the signals (e.g. QQQ for a QLD bot)
+    logging.info(f"==== {sym} bot" + (f" (signals from {sig_sym})" if sig_sym != sym else "") + f" ({'PAPER' if paper else 'LIVE'}){' DRY RUN' if args.dry_run else ''} ====")
 
     clock = trading.get_clock()
     now = clock.timestamp.astimezone(ET)
@@ -278,8 +279,9 @@ def run_day(args, cfg):
         logging.info(f"close is {close_t:%H:%M} ET; sleeping {wait / 60:.0f} min until {act_at:%H:%M} ET")
         time.sleep(max(wait, 0))
 
-    hist = history(data, sym)
-    live = live_today(data, sym)
+    hist = history(data, sig_sym)
+    live = live_today(data, sig_sym)
+    trade_live = live if sig_sym == sym else live_today(data, sym)
     today = dt.datetime.now(ET).date()
     # ---- sanity checks ----
     age_min = (dt.datetime.now(dt.timezone.utc) - live["trade_time"]).total_seconds() / 60
@@ -293,8 +295,13 @@ def run_day(args, cfg):
         problems.append(f"price {live['price']:.2f} is >12% from yesterday's close {prev_close:.2f}")
     if hist.index[-1].date() >= today:
         hist = hist.iloc[:-1]                      # never double-count today
+    if sig_sym != sym:
+        t_age = (dt.datetime.now(dt.timezone.utc) - trade_live["trade_time"]).total_seconds() / 60
+        if t_age > 15 and not args.now:
+            problems.append(f"latest {sym} trade is {t_age:.0f} min old")
     if problems:
         logging.error("NOT TRADING - " + "; ".join(problems)); return
+    px = trade_live["price"]                       # price of the symbol we actually trade
 
     bars = pd.concat([hist, pd.DataFrame([dict(open=live["open"], high=max(live["high"], live["price"]),
                                                low=min(live["low"], live["price"]), close=live["price"], volume=np.nan)],
@@ -308,9 +315,9 @@ def run_day(args, cfg):
     if cfg.get("max_capital"):
         budget = min(budget, float(cfg["max_capital"]))
     if mode == "fractional":
-        target = round(budget / live["price"], 6) if sig["invest"] else 0.0
+        target = round(budget / px, 6) if sig["invest"] else 0.0
     else:
-        target = math.floor(budget / live["price"]) if sig["invest"] else 0
+        target = math.floor(budget / px) if sig["invest"] else 0
     if sig["invest"] and qty > 0:
         target = qty                               # already invested: hold, don't churn
     delta = target - qty
@@ -318,18 +325,18 @@ def run_day(args, cfg):
     if mode == "fractional" and action == "buy" and budget < 1.0:
         logging.warning("budget under $1 - nothing to buy"); action = "hold"
 
-    logging.info(f"price {live['price']:.2f} ({live['feed']}), today's range {bars['low'].iloc[-1]:.2f}-{bars['high'].iloc[-1]:.2f}, "
+    logging.info((f"{sym} price {px:.2f}; " if sig_sym != sym else "") + f"{sig_sym} price {live['price']:.2f} ({live['feed']}), today's range {bars['low'].iloc[-1]:.2f}-{bars['high'].iloc[-1]:.2f}, "
                  f"IBS {sig['ibs']:.2f} -> IBS signal {'ON' if sig['ibs_on'] else 'off'}; "
                  f"MACD {sig['macd']:.3f} vs signal {sig['macd_signal']:.3f} -> {'ON' if sig['macd_on'] else 'off'}")
     logging.info(f"decision: {'INVESTED' if sig['invest'] else 'CASH'} | holding {qty:g} sh, target {target:g} sh -> {action.upper()} {abs(delta):g}"
-                 + (f" (about ${abs(delta) * live['price']:,.2f})" if action != "hold" else ""))
+                 + (f" (about ${abs(delta) * px:,.2f})" if action != "hold" else ""))
 
     order_id = ""
     if action != "hold" and not args.dry_run:
         try:
             cancel_open_orders(trading, sym)
             if mode == "fractional":
-                o = submit_fractional(trading, sym, action, round(min(budget, abs(delta) * live["price"]), 2))
+                o = submit_fractional(trading, sym, action, round(min(budget, abs(delta) * px), 2))
             else:
                 o = submit_moc(trading, sym, abs(delta), action)
             order_id = str(o.id)
@@ -339,7 +346,7 @@ def run_day(args, cfg):
             logging.error(f"ORDER FAILED: {e}")
             order_id = f"FAILED: {e}"
     log_decision(dict(date=str(today), time_et=dt.datetime.now(ET).strftime("%H:%M:%S"), mode="paper" if paper else "LIVE",
-                      dry_run=args.dry_run, symbol=sym, price=round(live["price"], 4), feed=live["feed"],
+                      dry_run=args.dry_run, symbol=sym, price=round(px, 4), feed=live["feed"],
                       order_mode=mode, ibs=round(sig["ibs"], 4), ibs_on=sig["ibs_on"], macd_on=sig["macd_on"], invest=sig["invest"],
                       equity=round(equity, 2), qty_before=qty, target_qty=target, action=action, order_id=order_id))
 
@@ -366,9 +373,13 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="compute and log the decision, but place no order")
     ap.add_argument("--now", action="store_true", help="don't wait for the pre-close time (for testing)")
     ap.add_argument("--report", action="store_true", help="summarize the decision log")
+    ap.add_argument("--config", default="bot_config.json", help="settings file (e.g. bot_config_qld.json for the QLD bot)")
     ap.add_argument("--max-wait", type=float, default=0, help="exit (do nothing) if the decision time is more than this many minutes away; used by the GitHub schedule")
     args = ap.parse_args()
-    setup_logging(); cfg = load_config()
+    global LOG_DIR
+    cfg = load_config(args.config)
+    LOG_DIR = os.path.join(HERE, cfg.get("log_dir", "logs"))
+    setup_logging()
     if args.report:
         report(cfg); return
     try:
