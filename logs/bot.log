@@ -51,3 +51,8 @@
 2026-11-12 20:55:00,466 INFO history: 414 daily bars from sip feed, last 2026-11-12
 2026-11-12 20:55:00,813 INFO price 687.48 (iex), today's range 680.00-694.52, IBS 0.52 -> IBS signal off; MACD -13.400 vs signal -12.819 -> off
 2026-11-12 20:55:00,813 INFO decision: CASH | holding 0 sh, target 0 sh -> HOLD 0
+2026-11-12 23:31:30,032 INFO ==== QQQ bot (PAPER) DRY RUN ====
+2026-11-12 23:31:30,351 INFO order mode: fractional (decides 5 min before the close)
+2026-11-12 23:31:31,041 INFO history: 414 daily bars from sip feed, last 2026-11-12
+2026-11-12 23:31:31,329 INFO QQQ price 689.38 (iex), today's range 680.00-694.52, IBS 0.65 -> IBS signal off; MACD -13.248 vs signal -12.789 -> off
+2026-11-12 23:31:31,330 INFO decision: CASH | holding 0 sh, target 0 sh -> HOLD 0
