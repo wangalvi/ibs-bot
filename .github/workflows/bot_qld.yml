@@ -1,31 +1,32 @@
-name: QLD bot (QQQ signals)
+name: QLD + day-trade bot (QQQ signals)
 
-# GitHub schedules are in UTC and often start 45-50 minutes late at busy times.
-# Starts every 30 minutes from 16:13 to 20:43 UTC; each run exits within seconds (--max-wait 60)
-# unless the decision time (3:55 pm ET, or 12:55 pm ET on half-days) is less than an hour away.
-# Runs never overlap (concurrency below); once one has traded, later runs are "too late" and skip.
+# One process per trading day: day-trade checks on QQQ every 30 minutes from 10:00 ET (TQQQ / SQQQ),
+# closes day trades at 3:55, then the QLD overnight decision at 3:58 pm ET.
+# GitHub jobs are capped at 6 hours and schedules can start late, so a run is started every 30 minutes;
+# the first one within an hour of 10:00 ET carries the day (up to ~5.5 h), and a queued run picks up the rest.
+# Runs never overlap (concurrency below). Every action reads the account first, so a repeated check is harmless.
 on:
   schedule:
-    - cron: "13,43 16-20 * * 1-5"
+    - cron: "7,37 13-20 * * 1-5"
   workflow_dispatch:
     inputs:
       mode:
-        description: "test = decide right now without placing an order; trade = a normal run (waits for 3:55 pm ET, then trades)"
+        description: "test = compute the latest check and the QLD decision now, no orders; trade = a normal run"
         type: choice
         options: [test, trade]
         default: test
 
 concurrency:
-  group: trading-bot-qld      # never two QLD runs at once
+  group: trading-bot-qld
   cancel-in-progress: false
 
 permissions:
-  contents: write             # lets the job commit the decision log back to the repo
+  contents: write
 
 jobs:
   trade:
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
 
@@ -38,12 +39,25 @@ jobs:
 
       - name: Run the bot
         env:
-          # its own Alpaca paper account, so its money never mixes with the QQQ bot's
-          APCA_API_KEY_ID: ${{ secrets.QLD_APCA_API_KEY_ID }}
-          APCA_API_SECRET_KEY: ${{ secrets.QLD_APCA_API_SECRET_KEY }}
+          QLD_KEY: ${{ secrets.QLD_APCA_API_KEY_ID }}
+          QLD_SECRET: ${{ secrets.QLD_APCA_API_SECRET_KEY }}
+          MAIN_KEY: ${{ secrets.APCA_API_KEY_ID }}
+          MAIN_SECRET: ${{ secrets.APCA_API_SECRET_KEY }}
+          MODE: ${{ github.event.inputs.mode }}
         run: |
-          if [ -z "$APCA_API_KEY_ID" ]; then echo "Add the QLD_APCA_API_KEY_ID and QLD_APCA_API_SECRET_KEY secrets (keys of a second Alpaca paper account)."; exit 1; fi
-          python live_bot.py --config bot_config_qld.json --max-wait 60 ${{ github.event.inputs.mode == 'test' && '--dry-run --now' || '' }}
+          if [ -n "$QLD_KEY" ]; then
+            export APCA_API_KEY_ID="$QLD_KEY" APCA_API_SECRET_KEY="$QLD_SECRET"
+          elif [ "$MODE" = "test" ]; then
+            echo "QLD keys not added yet - test mode reads market data with the QQQ bot's keys (places no orders)."
+            export APCA_API_KEY_ID="$MAIN_KEY" APCA_API_SECRET_KEY="$MAIN_SECRET"
+          else
+            echo "Add the QLD_APCA_API_KEY_ID and QLD_APCA_API_SECRET_KEY secrets (keys of a second Alpaca paper account)."; exit 1
+          fi
+          if [ "$MODE" = "test" ]; then
+            python day_trader.py --config bot_config_qld.json --test
+          else
+            python day_trader.py --config bot_config_qld.json --max-wait 60 --max-minutes 330
+          fi
 
       - name: Keep the logs
         if: always()
@@ -53,15 +67,15 @@ jobs:
           path: logs_qld/
           retention-days: 30
 
-      - name: Commit the decision log when something was decided
-        if: always()
+      - name: Commit the logs when something happened
+        if: always() && github.event.inputs.mode != 'test'
         run: |
           git config user.name "trading-bot"
           git config user.email "trading-bot@users.noreply.github.com"
-          if [ -n "$(git status --porcelain logs_qld/decisions.csv)" ]; then
-            git add logs_qld/
-            git commit -m "QLD bot log $(date -u +%Y-%m-%d)"
+          if [ -n "$(git status --porcelain logs_qld/decisions.csv logs_qld/day_trades.csv)" ]; then
+            git add logs_qld/decisions.csv logs_qld/day_trades.csv 2>/dev/null || git add logs_qld/
+            git commit -m "QLD + day-trade bot log $(date -u +%Y-%m-%d)"
             git pull --rebase && git push
           else
-            echo "No decision today in this run (early exit) - nothing to commit."
+            echo "Nothing traded or decided in this run - nothing to commit."
           fi
