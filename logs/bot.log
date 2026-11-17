@@ -69,3 +69,9 @@
 2026-11-16 20:55:01,043 INFO QQQ price 661.66 (iex), today's range 660.50-672.02, IBS 0.10 -> IBS signal ON; MACD -13.887 vs signal -13.041 -> off
 2026-11-16 20:55:01,043 INFO decision: INVESTED | holding 0 sh, target 0.146735 sh -> BUY 0.146735 (about $97.09)
 2026-11-16 20:55:01,393 INFO submitted fractional market buy of 0.146735 QQQ: order b0f44c19-4acd-4a71-910f-be0582a3f942, status OrderStatus.PENDING_NEW
+2026-11-17 20:30:23,327 INFO ==== QQQ bot (PAPER) ====
+2026-11-17 20:30:23,465 INFO order mode: fractional (decides 2 min before the close)
+2026-11-17 20:30:23,465 INFO close is 16:00 ET; sleeping 28 min until 15:58 ET
+2026-11-17 20:58:00,235 INFO history: 414 daily bars from sip feed, last 2026-11-17
+2026-11-17 20:58:00,522 INFO QQQ price 655.42 (iex), today's range 646.92-663.32, IBS 0.52 -> IBS signal ON; MACD -14.982 vs signal -13.428 -> off
+2026-11-17 20:58:00,523 INFO decision: INVESTED | holding 0.146781 sh, target 0.146781 sh -> HOLD 0
