@@ -1,0 +1,2 @@
+logs/*.csv merge=union
+logs_qld/*.csv merge=union

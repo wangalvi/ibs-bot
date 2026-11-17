@@ -316,7 +316,8 @@ def run(args, cfg):
         checks.append(o_t + dt.timedelta(minutes=CHECK_EVERY * k)); k += 1
     flat_t = c_t - dt.timedelta(minutes=FLATTEN_BEFORE)
     qld_t = c_t - dt.timedelta(minutes=cfg.get("fractional_minutes_before_close", 2))
-    events = [("check", t) for t in checks] + [("flatten", flat_t), ("qld", qld_t)]
+    # start the QLD step a little early: run_day() itself waits until its exact decision time
+    events = [("check", t) for t in checks] + [("flatten", flat_t), ("qld", min(qld_t, flat_t + dt.timedelta(seconds=30)))]
 
     # catch up: if we started after a check time, run the latest missed check right away (positions are read from the account)
     past = [t for kind, t in events if kind == "check" and t <= now and now < flat_t]
@@ -346,7 +347,6 @@ def run(args, cfg):
                     log_row(dict(date=str(o_t.date()), time_et=t.strftime("%H:%M"), dry_run=args.dry_run, qqq="", upper="",
                                  lower="", vwap="", sigma_pct="", was="", now=0, actions=" | ".join(acts)))
             else:
-                time.sleep(5)       # let the end-of-day sells settle into buying power
                 lb.run_day(SimpleNamespace(dry_run=args.dry_run, now=False, max_wait=0), cfg)
         except Exception as e:  # noqa: BLE001  (one bad check must not kill the day)
             logging.exception(f"{kind} at {t:%H:%M} failed: {e}")

@@ -269,7 +269,7 @@ def run_day(args, cfg):
     act_at = close_t - dt.timedelta(minutes=mins)
     logging.info(f"order mode: {mode} (decides {mins} min before the close)")
     if not args.now:
-        if now > act_at:
+        if now > act_at + dt.timedelta(seconds=90):
             logging.warning(f"too late: it is {now:%H:%M} ET and the decision time was {act_at:%H:%M} ET. Skipping today."); return
         wait = (act_at - now).total_seconds()
         if args.max_wait and wait > args.max_wait * 60:
