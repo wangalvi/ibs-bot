@@ -1,0 +1,86 @@
+2026-11-17 14:19:01,897 INFO ==== QLD + day-trade bot (PAPER) ====
+2026-11-17 15:00:04,029 INFO check 10:00 ET: QQQ 662.36 (iex) | band 656.85-668.04 (s=0.75%) | VWAP 661.63 | was FLAT -> FLAT
+2026-11-17 15:30:02,406 INFO check 10:30 ET: QQQ 658.39 (iex) | band 655.74-669.15 (s=0.92%) | VWAP 661.12 | was FLAT -> FLAT
+2026-11-17 16:00:05,024 INFO check 11:00 ET: QQQ 653.00 (iex) | band 655.34-669.55 (s=0.98%) | VWAP 659.01 | was FLAT -> SHORT (SQQQ) | bought $2,000.00 of SQQQ (order c5487d71-8cff-4c91-ad5b-b6a5bb1229e0)
+2026-11-17 16:30:02,563 INFO check 11:30 ET: QQQ 653.84 (iex) | band 656.29-668.60 (s=0.84%) | VWAP 656.28 | was SHORT (SQQQ) -> SHORT (SQQQ)
+2026-11-17 17:00:01,887 INFO check 12:00 ET: QQQ 652.77 (iex) | band 655.11-669.78 (s=1.01%) | VWAP 655.90 | was SHORT (SQQQ) -> SHORT (SQQQ)
+2026-11-17 17:30:09,334 INFO check 12:30 ET: QQQ 655.91 (iex) | band 654.70-670.19 (s=1.08%) | VWAP 655.38 | was SHORT (SQQQ) -> FLAT | sold all SQQQ (c5e75e9a-5fcb-4f64-b4c4-f2712cef4789)
+2026-11-17 18:00:05,815 INFO check 13:00 ET: QQQ 653.97 (iex) | band 654.35-670.55 (s=1.13%) | VWAP 655.41 | was FLAT -> SHORT (SQQQ) | bought $1,972.63 of SQQQ (order e186d48d-aaec-4c83-9b85-aed6708f15fc)
+2026-11-17 18:30:02,631 INFO check 13:30 ET: QQQ 656.55 (iex) | band 653.99-670.91 (s=1.18%) | VWAP 655.28 | was SHORT (SQQQ) -> FLAT | sold all SQQQ (9c0e8705-3f13-4f46-a848-c6ecbacc3537)
+2026-11-17 19:00:04,367 ERROR check at 14:00 failed: {"message": "unauthorized."}
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/common/rest.py", line 201, in _one_request
+    response.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://paper-api.alpaca.markets/v2/assets/SQQQ
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/work/ibs-bot/ibs-bot/day_trader.py", line 341, in run
+    check(trading, data, cfg, sess, max(t, dt.datetime.now(ET)), dry=args.dry_run)
+  File "/home/runner/work/ibs-bot/ibs-bot/day_trader.py", line 274, in check
+    actions.append(buy(trading, LONG if new == 1 else SHORT, dollars, dry))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/ibs-bot/ibs-bot/day_trader.py", line 203, in buy
+    asset = trading.get_asset(symbol)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/trading/client.py", line 413, in get_asset
+    response = self.get(f"/assets/{symbol_or_asset_id}")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/common/rest.py", line 228, in get
+    return self._request("GET", path, data, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/common/rest.py", line 131, in _request
+    return self._one_request(method, url, opts, retry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/common/rest.py", line 210, in _one_request
+    raise APIError(error, http_error)
+alpaca.common.exceptions.APIError: {"message": "unauthorized."}
+
+2026-11-17 19:30:00,306 ERROR check at 14:30 failed: <html>
+<head><title>401 Authorization Required</title></head>
+<body>
+<center><h1>401 Authorization Required</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/common/rest.py", line 201, in _one_request
+    response.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://paper-api.alpaca.markets/v2/calendar?start=2026-10-06&end=2026-11-16
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/work/ibs-bot/ibs-bot/day_trader.py", line 341, in run
+    check(trading, data, cfg, sess, max(t, dt.datetime.now(ET)), dry=args.dry_run)
+  File "/home/runner/work/ibs-bot/ibs-bot/day_trader.py", line 238, in check
+    prev_days = previous_sessions(trading, day, LOOKBACK + 6)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/ibs-bot/ibs-bot/day_trader.py", line 165, in previous_sessions
+    cal = trading.get_calendar(GetCalendarRequest(start=day - dt.timedelta(days=int(n * 1.6) + 10), end=day - dt.timedelta(days=1)))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/trading/client.py", line 456, in get_calendar
+    result = self.get("/calendar", filters.to_request_fields() if filters else {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/common/rest.py", line 228, in get
+    return self._request("GET", path, data, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/common/rest.py", line 131, in _request
+    return self._one_request(method, url, opts, retry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/alpaca/common/rest.py", line 210, in _one_request
+    raise APIError(error, http_error)
+alpaca.common.exceptions.APIError: <html>
+<head><title>401 Authorization Required</title></head>
+<body>
+<center><h1>401 Authorization Required</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+2026-11-17 19:30:00,307 INFO stopping before check at 15:00 ET to stay inside the run-time limit; the next scheduled run continues.
