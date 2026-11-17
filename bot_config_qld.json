@@ -12,5 +12,5 @@
   "macd_signal": 9,
   "live": false,
   "order_mode": "auto",
-  "fractional_minutes_before_close": 5
+  "fractional_minutes_before_close": 2
 }
