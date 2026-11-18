@@ -84,3 +84,15 @@ alpaca.common.exceptions.APIError: <html>
 </html>
 
 2026-11-17 19:30:00,307 INFO stopping before check at 15:00 ET to stay inside the run-time limit; the next scheduled run continues.
+2026-11-18 14:19:03,791 INFO ==== QLD + day-trade bot (PAPER) ====
+2026-11-18 15:00:07,197 INFO check 10:00 ET: QQQ 661.61 (iex) | band 652.13-665.92 (s=0.74%) | VWAP 658.87 | was FLAT -> FLAT
+2026-11-18 15:30:02,866 INFO check 10:30 ET: QQQ 659.76 (iex) | band 650.77-667.29 (s=0.95%) | VWAP 658.59 | was FLAT -> FLAT
+2026-11-18 16:00:02,266 INFO check 11:00 ET: QQQ 658.43 (iex) | band 650.05-668.01 (s=1.06%) | VWAP 658.65 | was FLAT -> FLAT
+2026-11-18 16:30:01,931 INFO check 11:30 ET: QQQ 655.37 (iex) | band 650.99-667.06 (s=0.91%) | VWAP 658.39 | was FLAT -> FLAT
+2026-11-18 17:00:01,882 INFO check 12:00 ET: QQQ 656.20 (iex) | band 649.74-668.32 (s=1.10%) | VWAP 657.90 | was FLAT -> FLAT
+2026-11-18 17:30:02,440 INFO check 12:30 ET: QQQ 661.66 (iex) | band 649.56-668.51 (s=1.13%) | VWAP 657.70 | was FLAT -> FLAT
+2026-11-18 18:00:02,577 INFO check 13:00 ET: QQQ 658.63 (iex) | band 649.01-669.06 (s=1.22%) | VWAP 658.01 | was FLAT -> FLAT
+2026-11-18 18:30:02,683 INFO check 13:30 ET: QQQ 659.59 (iex) | band 648.94-669.13 (s=1.23%) | VWAP 658.05 | was FLAT -> FLAT
+2026-11-18 19:00:02,016 INFO check 14:00 ET: QQQ 661.32 (iex) | band 649.01-669.06 (s=1.22%) | VWAP 658.20 | was FLAT -> FLAT
+2026-11-18 19:30:02,985 INFO check 14:30 ET: QQQ 659.76 (iex) | band 649.00-669.07 (s=1.22%) | VWAP 658.49 | was FLAT -> FLAT
+2026-11-18 19:30:02,986 INFO stopping before check at 15:00 ET to stay inside the run-time limit; the next scheduled run continues.
