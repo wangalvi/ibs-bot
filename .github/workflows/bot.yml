@@ -58,7 +58,7 @@ jobs:
           if [ -n "$(git status --porcelain logs/decisions.csv)" ]; then
             git add logs/
             git commit -m "bot log $(date -u +%Y-%m-%d)"
-            git pull --rebase && git push
+            git pull --rebase --autostash && git push
           else
             echo "No decision today in this run (early exit) - nothing to commit."
           fi
