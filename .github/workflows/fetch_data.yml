@@ -1,0 +1,22 @@
+name: Fetch QQQ data (for backtest updates)
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "first date (YYYY-MM-DD)"
+        default: "2026-10-01"
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements.txt
+      - env:
+          APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+          APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+        run: python fetch_minutes.py "${{ github.event.inputs.start }}"
+      - uses: actions/upload-artifact@v4
+        with: {name: qqq-data, path: data_export/, retention-days: 3}
