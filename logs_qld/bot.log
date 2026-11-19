@@ -96,3 +96,15 @@ alpaca.common.exceptions.APIError: <html>
 2026-11-18 19:00:02,016 INFO check 14:00 ET: QQQ 661.32 (iex) | band 649.01-669.06 (s=1.22%) | VWAP 658.20 | was FLAT -> FLAT
 2026-11-18 19:30:02,985 INFO check 14:30 ET: QQQ 659.76 (iex) | band 649.00-669.07 (s=1.22%) | VWAP 658.49 | was FLAT -> FLAT
 2026-11-18 19:30:02,986 INFO stopping before check at 15:00 ET to stay inside the run-time limit; the next scheduled run continues.
+2026-11-19 14:22:40,996 INFO ==== QLD + day-trade bot (PAPER) ====
+2026-11-19 15:00:01,893 INFO check 10:00 ET: QQQ 671.54 (iex) | band 654.81-675.97 (s=0.73%) | VWAP 673.13 | was FLAT -> FLAT
+2026-11-19 15:30:01,921 INFO check 10:30 ET: QQQ 663.29 (iex) | band 653.33-677.48 (s=0.95%) | VWAP 672.52 | was FLAT -> FLAT
+2026-11-19 16:00:01,759 INFO check 11:00 ET: QQQ 661.34 (iex) | band 652.58-678.24 (s=1.07%) | VWAP 667.74 | was FLAT -> FLAT
+2026-11-19 16:30:01,859 INFO check 11:30 ET: QQQ 662.70 (iex) | band 653.19-677.62 (s=0.97%) | VWAP 665.90 | was FLAT -> FLAT
+2026-11-19 17:00:01,873 INFO check 12:00 ET: QQQ 654.59 (iex) | band 652.05-678.79 (s=1.15%) | VWAP 665.54 | was FLAT -> FLAT
+2026-11-19 17:30:01,984 INFO check 12:30 ET: QQQ 656.26 (iex) | band 652.17-678.66 (s=1.13%) | VWAP 662.51 | was FLAT -> FLAT
+2026-11-19 18:00:04,993 INFO check 13:00 ET: QQQ 651.37 (iex) | band 651.47-679.37 (s=1.23%) | VWAP 661.41 | was FLAT -> SHORT (SQQQ) | bought $113.81 of SQQQ (order 613e96bd-800b-452f-b808-c5afcde4a3e8)
+2026-11-19 18:30:02,536 INFO check 13:30 ET: QQQ 651.96 (iex) | band 651.56-679.28 (s=1.22%) | VWAP 660.69 | was SHORT (SQQQ) -> FLAT | sold all SQQQ (99b76af5-c5df-43f8-9f5f-a5d02a9e37c0)
+2026-11-19 19:00:04,901 INFO check 14:00 ET: QQQ 649.60 (iex) | band 651.80-679.04 (s=1.18%) | VWAP 659.98 | was FLAT -> SHORT (SQQQ) | bought $113.24 of SQQQ (order db1b6dae-eeb2-451f-911f-627888f5e9c8)
+2026-11-19 19:30:02,118 INFO check 14:30 ET: QQQ 650.78 (iex) | band 651.71-679.13 (s=1.20%) | VWAP 659.29 | was SHORT (SQQQ) -> SHORT (SQQQ)
+2026-11-19 19:30:02,119 INFO stopping before check at 15:00 ET to stay inside the run-time limit; the next scheduled run continues.
