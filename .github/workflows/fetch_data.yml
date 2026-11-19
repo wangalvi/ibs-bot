@@ -5,6 +5,8 @@ on:
       start:
         description: "first date (YYYY-MM-DD)"
         default: "2026-10-01"
+permissions:
+  contents: write
 jobs:
   fetch:
     runs-on: ubuntu-latest
@@ -18,5 +20,10 @@ jobs:
           APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
           APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
         run: python fetch_minutes.py "${{ github.event.inputs.start }}"
-      - uses: actions/upload-artifact@v4
-        with: {name: qqq-data, path: data_export/, retention-days: 3}
+      - name: Save to the data-export branch
+        run: |
+          git config user.name "trading-bot"; git config user.email "trading-bot@users.noreply.github.com"
+          git checkout --orphan data-export
+          git rm -rq --cached . ; git add data_export/
+          git commit -qm "QQQ data export $(date -u +%F)"
+          git push -f origin data-export
