@@ -270,6 +270,9 @@ def check(trading, data, cfg, sess, at, dry, test=False):
             time.sleep(0 if dry else 2)
             acct = trading.get_account()
             equity, bp = float(acct.equity), float(acct.buying_power)
+            logging.info(f"account: equity {equity:,.2f} | buying power {bp:,.2f} | multiplier {getattr(acct, 'multiplier', '?')} | "
+                         f"regt bp {getattr(acct, 'regt_buying_power', '?')} | daytrading bp {getattr(acct, 'daytrading_buying_power', '?')} | "
+                         f"non-marginable bp {getattr(acct, 'non_marginable_buying_power', '?')}")
             dollars = min(equity * cfg.get("day_fraction", 1.0), bp * 0.95)
             actions.append(buy(trading, LONG if new == 1 else SHORT, dollars, dry))
     label = {1: "LONG (TQQQ)", -1: "SHORT (SQQQ)", 0: "FLAT"}
@@ -300,6 +303,15 @@ def run(args, cfg):
         o_t, c_t = sess
         last_check = o_t + dt.timedelta(minutes=CHECK_EVERY * int(((min(now, c_t) - o_t).total_seconds() // 60 - 1) // CHECK_EVERY))
         last_check = min(last_check, c_t - dt.timedelta(minutes=CHECK_EVERY))
+        a = trading.get_account()
+        logging.info("account: " + " | ".join(f"{k} {getattr(a, k, '?')}" for k in ("status", "equity", "last_equity", "cash", "long_market_value",
+                     "buying_power", "regt_buying_power", "daytrading_buying_power", "non_marginable_buying_power", "multiplier",
+                     "initial_margin", "maintenance_margin", "shorting_enabled", "pattern_day_trader", "daytrade_count")))
+        try:
+            cfgs = trading.get(f"/account/configurations")
+            logging.info(f"account settings: {cfgs}")
+        except Exception as e:  # noqa: BLE001
+            logging.info(f"account settings: unavailable ({e})")
         check(trading, data, cfg, sess, last_check, dry=True, test=True)
         lb.run_day(SimpleNamespace(dry_run=True, now=True, max_wait=0), cfg)
         return
