@@ -14,5 +14,6 @@
   "order_mode": "fractional",
   "fractional_minutes_before_close": 2,
   "day_trading_enabled": true,
-  "day_fraction": 1.0
+  "day_fraction": 1.0,
+  "macd_only_above_sma": 200
 }

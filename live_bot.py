@@ -7,6 +7,7 @@ Strategy (unchanged from the backtest):
   IBS signal: turns ON when IBS < 0.20, stays on until a day with IBS > 0.80.
   MACD signal: ON while MACD(12, 26) is above its 9-day signal line.
   Be fully invested in the symbol if EITHER signal is on; otherwise hold cash.
+  Optional (config macd_only_above_sma = 200): MACD only counts while QQQ is above its 200-day average.
 
 How a trading day works:
   1. Run the bot any time before the close (Task Scheduler can start it in the morning).
@@ -96,9 +97,20 @@ def decide(bars, cfg):
     ibs = ibs_series(bars["high"], bars["low"], bars["close"])
     state = ibs_state(ibs.values, cfg["ibs_buy"], cfg["ibs_sell"])
     mon, m, s = macd_on(bars["close"], cfg["macd_fast"], cfg["macd_slow"], cfg["macd_signal"])
+    # Option 2a: MACD only counts while QQQ is above its N-day average (default off = MACD always counts).
+    n = cfg.get("macd_only_above_sma")
+    if n:
+        sma = bars["close"].rolling(int(n)).mean()
+        if pd.isna(sma.iloc[-1]):
+            raise RuntimeError(f"not enough daily history for the {n}-day average")
+        trend_up = bool(bars["close"].iloc[-1] > sma.iloc[-1])
+    else:
+        sma, trend_up = None, True
+    macd_counts = bool(mon.iloc[-1]) and trend_up
     return dict(ibs=float(ibs.iloc[-1]), ibs_on=bool(state[-1]), ibs_on_yesterday=bool(state[-2]),
                 macd=float(m.iloc[-1]), macd_signal=float(s.iloc[-1]), macd_on=bool(mon.iloc[-1]),
-                invest=bool(state[-1] or mon.iloc[-1]))
+                sma=None if sma is None else float(sma.iloc[-1]), trend_up=trend_up, macd_counts=macd_counts,
+                invest=bool(state[-1] or macd_counts))
 
 
 # --------------------------------------------------------------------------------------
@@ -327,7 +339,9 @@ def run_day(args, cfg):
 
     logging.info((f"{sym} price {px:.2f}; " if sig_sym != sym else "") + f"{sig_sym} price {live['price']:.2f} ({live['feed']}), today's range {bars['low'].iloc[-1]:.2f}-{bars['high'].iloc[-1]:.2f}, "
                  f"IBS {sig['ibs']:.2f} -> IBS signal {'ON' if sig['ibs_on'] else 'off'}; "
-                 f"MACD {sig['macd']:.3f} vs signal {sig['macd_signal']:.3f} -> {'ON' if sig['macd_on'] else 'off'}")
+                 f"MACD {sig['macd']:.3f} vs signal {sig['macd_signal']:.3f} -> {'ON' if sig['macd_on'] else 'off'}"
+                 + ("" if sig.get("sma") is None else f" | {cfg['macd_only_above_sma']}-day avg {sig['sma']:.2f}: "
+                    + ("above, MACD counts" if sig["trend_up"] else "below, MACD ignored")))
     logging.info(f"decision: {'INVESTED' if sig['invest'] else 'CASH'} | holding {qty:g} sh, target {target:g} sh -> {action.upper()} {abs(delta):g}"
                  + (f" (about ${abs(delta) * px:,.2f})" if action != "hold" else ""))
 

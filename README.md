@@ -35,6 +35,8 @@ Replaces the plain QLD bot. One Alpaca paper account, run by `day_trader.py`:
   QLD held + long signal: QLD -> TQQQ (+3x). QLD held + short signal: QLD -> SQQQ with 1/3 of the money (-1x net).
   When the day trade ends, QLD is bought back; at 3:55 day trades close and the 3:58 decision re-buys QLD if the signal is on.
   `python test_netting.py` checks every swap against a simulated account.
+- **MACD trend filter (both bots):** `macd_only_above_sma: 200` - MACD only counts while QQQ is above its 200-day average;
+  below it, only IBS dip-buys trigger. Set to null to use MACD always.
 - Settings: `bot_config_qld.json` (`day_trading_enabled`, `day_fraction` = share of equity per day trade).
   Logs: `logs_qld/decisions.csv` (overnight) and `logs_qld/day_trades.csv` (every check).
 - Schedule: `.github/workflows/bot_qld.yml` (one run carries the whole day; it stays running during market hours).
