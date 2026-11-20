@@ -75,7 +75,7 @@ jobs:
           if [ -n "$(git status --porcelain logs_qld/decisions.csv logs_qld/day_trades.csv)" ]; then
             git add logs_qld/decisions.csv logs_qld/day_trades.csv 2>/dev/null || git add logs_qld/
             git commit -m "QLD + day-trade bot log $(date -u +%Y-%m-%d)"
-            git pull --rebase --autostash && git push
+            for i in 1 2 3 4 5; do git pull --rebase --autostash && git push && break; echo "push race, retrying ($i)"; sleep $((RANDOM % 10 + 5)); done
           else
             echo "Nothing traded or decided in this run - nothing to commit."
           fi

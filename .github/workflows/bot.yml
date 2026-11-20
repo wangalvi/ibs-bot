@@ -58,7 +58,7 @@ jobs:
           if [ -n "$(git status --porcelain logs/decisions.csv)" ]; then
             git add logs/
             git commit -m "bot log $(date -u +%Y-%m-%d)"
-            git pull --rebase --autostash && git push
+            for i in 1 2 3 4 5; do git pull --rebase --autostash && git push && break; echo "push race, retrying ($i)"; sleep $((RANDOM % 10 + 5)); done
           else
             echo "No decision today in this run (early exit) - nothing to commit."
           fi
