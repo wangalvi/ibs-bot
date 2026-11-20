@@ -14,9 +14,13 @@ Day-trade part ("noise-area breakout", Zarattini, Aziz & Barbon 2024), signals f
     long  -> exit when QQQ falls below max(upper, VWAP)
     short -> exit when QQQ rises above min(lower, VWAP)
   Everything is closed 5 minutes before the close. Never held overnight.
-  Size: day_fraction x account equity (default 1.0), capped by the account's buying power.
-  With $2,000+ equity Alpaca allows margin, so the day trade can run on top of the QLD position;
-  below that it only uses whatever cash is free.
+
+Netting (Alpaca needs full cash for leveraged ETFs, so the day trade cannot sit on top of QLD):
+  QLD held overnight + long signal  -> sell QLD, hold TQQQ with the same money      (+3x instead of +2x)
+  QLD held overnight + short signal -> sell QLD, hold SQQQ with 1/3 of it, rest cash (2x - 3x = -1x net)
+  no QLD + long / short signal      -> TQQQ / SQQQ with the money                    (+3x / -3x)
+  When a day trade ends before 3:55 the QLD position is bought back. At 3:55 day trades are closed and the
+  3:58 QLD decision buys QLD again if the signal is on. Money per position = capital_fraction x equity.
 
 Backtest (2016-Nov 2026, QQQ 1-minute data, 0.02%/side costs): day part alone ~26%/yr (worst drop -25%);
 QLD bot + day part ~89%/yr, worst drop -32% - before the slower fills and taxes of real trading.
@@ -193,7 +197,7 @@ def flatten(trading, dry):
     return out
 
 
-def buy(trading, symbol, dollars, dry):
+def buy(trading, symbol, dollars, dry, client_order_id=None):
     from alpaca.trading.enums import OrderSide, TimeInForce
     from alpaca.trading.requests import MarketOrderRequest
     if dollars < 1:
@@ -202,15 +206,84 @@ def buy(trading, symbol, dollars, dry):
         return f"(dry) would buy ${dollars:,.2f} of {symbol}"
     asset = trading.get_asset(symbol)
     if getattr(asset, "fractionable", False):
-        req = MarketOrderRequest(symbol=symbol, notional=round(dollars, 2), side=OrderSide.BUY, time_in_force=TimeInForce.DAY)
+        req = MarketOrderRequest(symbol=symbol, notional=round(dollars, 2), side=OrderSide.BUY, time_in_force=TimeInForce.DAY,
+                                 client_order_id=client_order_id)
     else:
         px, _, _ = latest_price(lb_data[0], symbol)
         qty = int(dollars // px)
         if qty < 1:
             return f"{symbol} is not fractionable and ${dollars:,.2f} buys no whole share - skipped"
-        req = MarketOrderRequest(symbol=symbol, qty=qty, side=OrderSide.BUY, time_in_force=TimeInForce.DAY)
+        req = MarketOrderRequest(symbol=symbol, qty=qty, side=OrderSide.BUY, time_in_force=TimeInForce.DAY,
+                                 client_order_id=client_order_id)
     o = trading.submit_order(req)
     return f"bought ${dollars:,.2f} of {symbol} (order {o.id})"
+
+
+NET_OUT, NET_BACK = "netout", "netback"
+
+
+def overnight_flag(trading, day):
+    """True if QLD was held going into today: still held, or sold today by a netting swap and not yet bought back."""
+    if lb.current_qty(trading, "QLD") > 0:
+        return True
+    from alpaca.trading.enums import QueryOrderStatus
+    from alpaca.trading.requests import GetOrdersRequest
+    orders = trading.get_orders(GetOrdersRequest(status=QueryOrderStatus.ALL, symbols=["QLD"], limit=100,
+                                                 after=dt.datetime.combine(day, dt.time(4, 0), ET)))
+    tag = lambda o: (getattr(o, "client_order_id", "") or "")
+    filled = lambda o: float(getattr(o, "filled_qty", 0) or 0) > 0
+    outs = sum(1 for o in orders if tag(o).startswith(NET_OUT) and filled(o))
+    backs = sum(1 for o in orders if tag(o).startswith(NET_BACK) and filled(o))
+    return outs > backs
+
+
+def targets(flag, daypos, equity, cf):
+    """Dollar targets for QLD / TQQQ / SQQQ (0 = hold none)."""
+    t = {"QLD": 0.0, LONG: 0.0, SHORT: 0.0}
+    if daypos == 1:
+        t[LONG] = cf * equity
+    elif daypos == -1:
+        t[SHORT] = cf * equity / 3 if flag else cf * equity
+    elif flag:
+        t["QLD"] = cf * equity
+    return t
+
+
+def _oid(prefix):
+    return f"{prefix}-{dt.datetime.now(ET):%Y%m%d-%H%M%S}-{os.urandom(2).hex()}"
+
+
+def rebalance(trading, want, dry):
+    """Sell what should be zero, wait for the fills, then buy what should be held. Only zero <-> held switches."""
+    from alpaca.trading.enums import OrderSide, TimeInForce
+    from alpaca.trading.requests import MarketOrderRequest
+    acts = []
+    have = {s_: lb.current_qty(trading, s_) for s_ in want}
+    for s_, q in have.items():
+        if q > 0 and want[s_] <= 0:
+            if dry:
+                acts.append(f"(dry) would sell all {s_}"); continue
+            lb.cancel_open_orders(trading, s_)
+            tag = _oid(NET_OUT) if s_ == "QLD" else _oid("dayexit")
+            o = trading.submit_order(MarketOrderRequest(symbol=s_, qty=q, side=OrderSide.SELL, time_in_force=TimeInForce.DAY,
+                                                        client_order_id=tag))
+            acts.append(f"sold all {s_} ({o.id})")
+    if not dry and any(have[s_] > 0 and want[s_] <= 0 for s_ in want):
+        for _ in range(30):                       # wait up to ~30 s for the sells to fill
+            time.sleep(1)
+            if all(lb.current_qty(trading, s_) == 0 for s_ in want if have[s_] > 0 and want[s_] <= 0):
+                break
+    for s_, dollars in want.items():
+        if dollars > 0 and have[s_] == 0:
+            if dry:
+                acts.append(f"(dry) would buy ${dollars:,.2f} of {s_}"); continue
+            acct = trading.get_account()
+            cash_room = float(acct.buying_power) * 0.97
+            amt = min(dollars, cash_room)
+            if amt < 1:
+                acts.append(f"no buying power for {s_} (${cash_room:,.2f})"); continue
+            acts.append(buy(trading, s_, amt, dry, client_order_id=_oid(NET_BACK) if s_ == "QLD" else _oid("dayentry")))
+    return acts
 
 
 def log_row(row):
@@ -263,18 +336,18 @@ def check(trading, data, cfg, sess, at, dry, test=False):
         logging.error("day trade check skipped - " + "; ".join(problems))
         return
     new = day_decision(0 if pos == 9 else pos, price, upper, lower, vw)
+    if not cfg.get("day_trading_enabled", True):
+        new = 0
     actions = []
-    if pos == 9 or new != pos:
-        actions += flatten(trading, dry)
-        if new != 0 and cfg.get("day_trading_enabled", True):
-            time.sleep(0 if dry else 2)
-            acct = trading.get_account()
-            equity, bp = float(acct.equity), float(acct.buying_power)
-            logging.info(f"account: equity {equity:,.2f} | buying power {bp:,.2f} | multiplier {getattr(acct, 'multiplier', '?')} | "
-                         f"regt bp {getattr(acct, 'regt_buying_power', '?')} | daytrading bp {getattr(acct, 'daytrading_buying_power', '?')} | "
-                         f"non-marginable bp {getattr(acct, 'non_marginable_buying_power', '?')}")
-            dollars = min(equity * cfg.get("day_fraction", 1.0), bp * 0.95)
-            actions.append(buy(trading, LONG if new == 1 else SHORT, dollars, dry))
+    flag = overnight_flag(trading, day)
+    qld_missing = new == 0 and flag and lb.current_qty(trading, "QLD") == 0   # a swap-back that didn't happen yet
+    if pos == 9 or new != pos or qld_missing:
+        acct = trading.get_account()
+        equity = float(acct.equity)
+        want = targets(flag, new, equity, cfg.get("capital_fraction", 0.98))
+        logging.info(f"netting: QLD overnight={flag} | equity {equity:,.2f} | buying power {float(acct.buying_power):,.2f} | "
+                     f"targets " + ", ".join(f"{k} ${v:,.0f}" for k, v in want.items()))
+        actions += rebalance(trading, want, dry)
     label = {1: "LONG (TQQQ)", -1: "SHORT (SQQQ)", 0: "FLAT"}
     logging.info(f"check {at:%H:%M} ET: QQQ {price:.2f} ({feed}) | band {lower:.2f}-{upper:.2f} (s={sigma*100:.2f}%) | "
                  f"VWAP {vw:.2f} | was {label.get(pos, 'BOTH')} -> {label[new]}" + (f" | {'; '.join(actions)}" if actions else ""))

@@ -31,6 +31,10 @@ Replaces the plain QLD bot. One Alpaca paper account, run by `day_trader.py`:
 - **Day trades:** every 30 minutes from 10:00 ET, if QQQ breaks out of its usual range for that time of day
   (based on the last 14 days), buy TQQQ (upside) or SQQQ (downside). Exit when QQQ falls back past VWAP or the range edge.
   All day trades are closed at 3:55 pm ET, never held overnight.
+- **Netting:** Alpaca needs full cash for leveraged ETFs, so day trades swap the QLD position instead of adding to it.
+  QLD held + long signal: QLD -> TQQQ (+3x). QLD held + short signal: QLD -> SQQQ with 1/3 of the money (-1x net).
+  When the day trade ends, QLD is bought back; at 3:55 day trades close and the 3:58 decision re-buys QLD if the signal is on.
+  `python test_netting.py` checks every swap against a simulated account.
 - Settings: `bot_config_qld.json` (`day_trading_enabled`, `day_fraction` = share of equity per day trade).
   Logs: `logs_qld/decisions.csv` (overnight) and `logs_qld/day_trades.csv` (every check).
 - Schedule: `.github/workflows/bot_qld.yml` (one run carries the whole day; it stays running during market hours).
